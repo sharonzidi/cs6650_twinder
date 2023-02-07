@@ -34,4 +34,13 @@ public class SwipeDetails {
     public void setComment(String comment) {
         this.comment = comment;
     }
+
+    @Override
+    public String toString() {
+        return "SwipeDetails{" +
+                "swiper='" + swiper + '\'' +
+                ", swipee='" + swipee + '\'' +
+                ", comment='" + comment + '\'' +
+                '}';
+    }
 }
