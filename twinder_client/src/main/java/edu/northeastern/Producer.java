@@ -9,17 +9,24 @@ public class Producer implements Runnable {
 
     private final ApiClient apiClient;
     private final BlockingQueue<Message> blockingQueue;
+    private final int numOfTasks;
+    private final int numOfPills;
+
 
     public Producer(final ApiClient apiClient,
-                    final BlockingQueue<Message> blockingQueue) {
+                    final BlockingQueue<Message> blockingQueue,
+                    final int numOfTasks,
+                    final int numOfPills) {
         this.apiClient = apiClient;
         this.blockingQueue = blockingQueue;
+        this.numOfTasks = numOfTasks;
+        this.numOfPills = numOfPills;
     }
 
     @Override
     public void run() {
         System.out.println("executing producer");
-        produce(2000);
+        produce(numOfTasks);
     }
 
     public void produce(final int size) {
@@ -30,7 +37,9 @@ public class Producer implements Runnable {
             blockingQueue.add(message);
         }
 
-        blockingQueue.add( new Message(true));
-        blockingQueue.add( new Message(true));
+
+        for (int i = 0; i < numOfPills; i++) {
+            blockingQueue.add(new Message(true));
+        }
     }
 }

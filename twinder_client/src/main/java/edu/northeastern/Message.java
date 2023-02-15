@@ -3,8 +3,8 @@ package edu.northeastern;
 import io.swagger.client.api.SwipeApi;
 
 public class Message {
-    public boolean isPill;
-    public SwipeApi swipeApi;
+    private final boolean isPill;
+    private final SwipeApi swipeApi;
 
     public Message(boolean isPill) {
         this.isPill = isPill;
@@ -14,5 +14,13 @@ public class Message {
     public Message(SwipeApi swipeApi) {
         this.isPill = false;
         this.swipeApi = swipeApi;
+    }
+
+    public boolean isPill() {
+        return isPill;
+    }
+
+    public SwipeApi getSwipeApi() {
+        return swipeApi;
     }
 }
