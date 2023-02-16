@@ -16,4 +16,12 @@ public class TimeEntry {
     public long getEndTime() {
         return endTime;
     }
+
+    @Override
+    public String toString() {
+        return "TimeEntry{" +
+                "startTime=" + startTime +
+                ", endTime=" + endTime +
+                '}';
+    }
 }

@@ -56,6 +56,7 @@ public class Consumer implements Runnable {
                 final long endTime = System.currentTimeMillis();
                 resultQueue.add(new TimeEntry(startTime, endTime));
 
+                System.out.println("current queue size: " + blockingQueue.size());
             } catch (ApiException exception) {
                 exception.printStackTrace();
             }
