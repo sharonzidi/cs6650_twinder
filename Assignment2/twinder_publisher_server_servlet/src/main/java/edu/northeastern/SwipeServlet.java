@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import edu.northeastern.models.StatusResponse;
+import edu.northeastern.models.SwipeDetailsMessage;
 import edu.northeastern.models.SwipeDetailsRequest;
 import edu.northeastern.utils.ServletHelper;
 import lombok.extern.log4j.Log4j2;
@@ -16,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
@@ -65,6 +67,8 @@ public class SwipeServlet extends HttpServlet {
             return;
         }
 
+        final String leftOrRight = urlParts[1];
+
         // validate string payload parsing
         final String payload = ServletHelper.parsePayloadString(request);
 
@@ -84,16 +88,23 @@ public class SwipeServlet extends HttpServlet {
             return;
         }
 
+        final SwipeDetailsMessage swipeDetailsMessage = SwipeDetailsMessage.builder()
+                .swipee(swipeDetailsRequest.getSwipee())
+                .swiper(swipeDetailsRequest.getSwiper())
+                .comment(swipeDetailsRequest.getComment())
+                .leftOrRight(leftOrRight)
+                .build();
+
         final StatusResponse<SwipeDetailsRequest> statusResponse = StatusResponse.<SwipeDetailsRequest>builder()
                 .data(swipeDetailsRequest)
                 .build();
 
         // add to RMQ producer
         try {
-            System.out.println(gson.toJson(statusResponse.getData()));
-            sendToRabbitMQ(gson.toJson(statusResponse.getData()));
+            final String swipeMessage = gson.toJson(swipeDetailsMessage);
+            System.out.println("Sending message: " + swipeMessage);
+            sendToRabbitMQ(swipeMessage);
         } catch (Exception e) {
-//            System.out.println(e.getMessage());
             e.printStackTrace();
         }
 
@@ -103,9 +114,9 @@ public class SwipeServlet extends HttpServlet {
     private void sendToRabbitMQ(String jsonPayload) throws IOException, TimeoutException {
         // Set up RabbitMQ connection and channel
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost"); // Replace with the hostname or IP address of your RabbitMQ server
+        factory.setHost("18.237.102.88"); // Replace with the hostname or IP address of your RabbitMQ server
         factory.setUsername("admin-user"); // Replace with your RabbitMQ username
-        factory.setPassword("admin-password"); // Replace with your RabbitMQ password
+        factory.setPassword("aKNlI4BwD#w74S#R9&KE"); // Replace with your RabbitMQ password
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 

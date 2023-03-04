@@ -1,12 +1,16 @@
 package edu.northeastern.models;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
-@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
+@SuperBuilder
 public class SwipeDetailsRequest {
-    private final String swiper;
-    private final String swipee;
-    private final String comment;
+    private String swiper;
+    private String swipee;
+    private String comment;
 }

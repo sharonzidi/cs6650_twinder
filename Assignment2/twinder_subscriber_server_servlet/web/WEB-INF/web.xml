@@ -5,12 +5,13 @@
          version="4.0">
 
     <servlet>
-        <servlet-name>SwipeServlet</servlet-name>
-        <servlet-class>edu.northeastern.SwipeServlet</servlet-class>
+        <servlet-name>SubscriberServlet</servlet-name>
+        <servlet-class>edu.northeastern.SubscriberServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>SwipeServlet</servlet-name>
-        <url-pattern>/swipe/*</url-pattern>
+        <servlet-name>SubscriberServlet</servlet-name>
+        <url-pattern>/subscriber</url-pattern>
     </servlet-mapping>
+
 </web-app>
