@@ -17,11 +17,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Main {
 
-    private static final String BASE_PATH = "http://54.188.95.240:9988";
+    private static final String BASE_PATH = "http://localhost:9988/cs6650_server_war";
 
-    private static final int NUM_OF_TASKS = 500000;
+    private static final int NUM_OF_TASKS = 100;
 
-    private static final int NUM_OF_CONSUMER_THREADS = 1000;
+    private static final int NUM_OF_CONSUMER_THREADS = 10;
 
     public static void main(String[] args) throws IOException {
         final ApiClient apiClient = new ApiClient();

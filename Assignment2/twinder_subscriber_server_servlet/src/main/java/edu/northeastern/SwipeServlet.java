@@ -1,12 +1,17 @@
 package edu.northeastern;
 
 import com.google.gson.Gson;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 import edu.northeastern.models.StatusResponse;
 import edu.northeastern.models.SwipeDetailsRequest;
 import edu.northeastern.utils.ServletHelper;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
 import javax.servlet.ServletException;
@@ -46,6 +51,7 @@ public class SwipeServlet extends HttpServlet {
         }
     }
 
+    @SneakyThrows
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 //        log.info("Handling SwipeServlet post request...");
@@ -88,19 +94,6 @@ public class SwipeServlet extends HttpServlet {
                 .data(swipeDetailsRequest)
                 .build();
 
-        // add to RMQ producer
-        try {
-            System.out.println(gson.toJson(statusResponse.getData()));
-            sendToRabbitMQ(gson.toJson(statusResponse.getData()));
-        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-
-        responseHandler(response, HttpServletResponse.SC_OK, gson.toJson(statusResponse.getData()));
-    }
-
-    private void sendToRabbitMQ(String jsonPayload) throws IOException, TimeoutException {
         // Set up RabbitMQ connection and channel
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost"); // Replace with the hostname or IP address of your RabbitMQ server
@@ -112,13 +105,22 @@ public class SwipeServlet extends HttpServlet {
         // Declare the queue if it doesn't already exist
         channel.queueDeclare(QUEUE_NAME, false, false, false, null);
 
-        // Send the message to the queue
-        channel.basicPublish("", QUEUE_NAME, null, jsonPayload.getBytes(StandardCharsets.UTF_8));
+        // Create a consumer to consume messages from the queue
+        Consumer consumer = new DefaultConsumer(channel) {
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                String message = new String(body, "UTF-8");
+                System.out.println("Received message: " + message);
+            }
+        };
 
-        // Clean up resources
-        channel.close();
-        connection.close();
+        // Start consuming messages from the queue
+        channel.basicConsume(QUEUE_NAME, true, consumer);
+
+
+        responseHandler(response, HttpServletResponse.SC_OK, gson.toJson(statusResponse.getData()));
     }
+
 
     private boolean isUrlValid(String[] parts) {
         final String leftOrRight = parts[1];

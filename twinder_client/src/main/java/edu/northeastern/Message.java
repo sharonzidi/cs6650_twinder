@@ -12,7 +12,7 @@ public class Message {
     }
 
     public Message(SwipeApi swipeApi) {
-        this.isPill = false;
+        isPill = false;
         this.swipeApi = swipeApi;
     }
 
