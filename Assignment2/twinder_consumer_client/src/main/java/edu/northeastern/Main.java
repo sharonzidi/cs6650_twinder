@@ -6,7 +6,7 @@ import com.rabbitmq.client.ConnectionFactory;
 public class Main {
 
     private static final String QUEUE_NAME = "twinder_swipe_queue";
-    private static final String RMQ_HOST = "localhost";
+    private static final String RMQ_HOST = "52.25.220.182";
     private static final String RMQ_USERNAME = "admin-user";
     private static final String RMQ_PASSWORD = "aKNlI4BwD#w74S#R9&KE";
 

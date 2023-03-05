@@ -113,7 +113,7 @@ public class SwipeServlet extends HttpServlet {
     private void sendToRabbitMQ(String jsonPayload) throws IOException, TimeoutException {
         // Set up RabbitMQ connection and channel
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost"); // Replace with the hostname or IP address of your RabbitMQ server
+        factory.setHost("52.25.220.182"); // Replace with the hostname or IP address of your RabbitMQ server
         factory.setUsername("admin-user"); // Replace with your RabbitMQ username
         factory.setPassword("aKNlI4BwD#w74S#R9&KE"); // Replace with your RabbitMQ password
         Connection connection = factory.newConnection();

@@ -36,8 +36,31 @@ rabbitmq:3.11-management
 https://typeofnan.dev/how-to-stop-all-docker-containers/
 
 
-```
-cd /Users/sharonxia/github/cs6650_twinder/Assignment2/twinder_publisher_server_servlet
 
-scp -i ../../key.pem target/cs6650-server-1.0-SNAPSHOT.war ec2-user@34.222.146.107:/home/ec2-user/apache-tomcat-9.0.71/webapps
+
+
+# Tomcat EC2
+
+## Auto Start
+
+* https://medium.com/@shrunk7byadagi/automatically-start-tomcat-on-instance-startup-reboot-in-amazon-ec2-ubuntu-instance-33849a9d9090
+
+* https://serverfault.com/questions/345228/update-rc-d-on-amazon-linux
+
+The Amazon Linux (which is essentially CentOS, which is essentially Red Hat) equivalent of update-rc.d is chkconfig. http://www.cyberciti.biz/faq/rhel5-update-rcd-command/
+
 ```
+chkconfig --add tomcat
+chkconfig tomcat on
+```
+
+
+
+```
+cd /Users/sharonxia/github/cs6650_twinder
+
+scp -i key.pem Assignment2/twinder_publisher_server_servlet/target/cs6650-server-1.0-SNAPSHOT.war ec2-user@35.89.5.25:/home/ec2-user/apache-tomcat/webapps/web-server.war
+```
+
+
+
