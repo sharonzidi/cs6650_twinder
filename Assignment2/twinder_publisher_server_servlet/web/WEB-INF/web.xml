@@ -9,8 +9,19 @@
         <servlet-class>edu.northeastern.SwipeServlet</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>HealthServlet</servlet-name>
+        <servlet-class>edu.northeastern.HealthServlet</servlet-class>
+    </servlet>
+
     <servlet-mapping>
         <servlet-name>SwipeServlet</servlet-name>
         <url-pattern>/swipe/*</url-pattern>
     </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>HealthServlet</servlet-name>
+        <url-pattern>/health</url-pattern>
+    </servlet-mapping>
+
 </web-app>

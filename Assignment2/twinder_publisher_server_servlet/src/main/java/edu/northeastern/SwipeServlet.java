@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
@@ -114,7 +113,7 @@ public class SwipeServlet extends HttpServlet {
     private void sendToRabbitMQ(String jsonPayload) throws IOException, TimeoutException {
         // Set up RabbitMQ connection and channel
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("18.237.102.88"); // Replace with the hostname or IP address of your RabbitMQ server
+        factory.setHost("localhost"); // Replace with the hostname or IP address of your RabbitMQ server
         factory.setUsername("admin-user"); // Replace with your RabbitMQ username
         factory.setPassword("aKNlI4BwD#w74S#R9&KE"); // Replace with your RabbitMQ password
         Connection connection = factory.newConnection();

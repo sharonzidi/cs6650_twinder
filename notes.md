@@ -2,7 +2,7 @@
 https://awsacademy.instructure.com/courses/36197/modules/items/3082081
 
 ### RabbitMQ EC2
-```
+```bash
 ssh -i key.pem ec2-user@54.149.172.209
 ```
 
