@@ -1,5 +1,6 @@
 package edu.northeastern;
 
+import com.google.gson.Gson;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerApi;
@@ -7,8 +8,12 @@ import com.mongodb.ServerApiVersion;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import edu.northeastern.utils.ServletHelper;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
+import edu.northeastern.models.GetMatchesResponse;
+import edu.northeastern.models.MessageResponse;
 import lombok.extern.log4j.Log4j2;
+import org.bson.Document;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -16,19 +21,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.LinkedList;
 
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
-import org.bson.Document;
+import static edu.northeastern.utils.ServletHelper.responseHandler;
 
 @WebServlet(name = "MatchesServlet", value = "/MatchesServlet")
 @Log4j2
 public class MatchesServlet extends HttpServlet {
 
-//    @Override
-//    public void init() throws ServletException {
-//        super.init();
-//    }
+    private final Gson gson = new Gson();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -42,32 +43,37 @@ public class MatchesServlet extends HttpServlet {
                 .build();
         MongoClient mongoClient = MongoClients.create(settings);
         MongoDatabase database = mongoClient.getDatabase("cs6650-distributed-sys");
-        MongoCollection<Document> collection  = database.getCollection("twinder-data");
+        MongoCollection<Document> collection = database.getCollection("twinder-data"); //the collection of documents to query
 
         response.setContentType("text/plain");
 
+        System.out.println(request.getPathInfo());
+
         // check we have a URL!
         final String urlPath = request.getPathInfo();
+
         if (urlPath == null || urlPath.isEmpty()) {
-            responseHandler(response, HttpServletResponse.SC_NOT_FOUND, "Required path parameter is missing.");
+            MessageResponse messageResponse = MessageResponse.builder()
+                    .message("The given input is invalid.")
+                    .build();
+            responseHandler(response, HttpServletResponse.SC_BAD_REQUEST, gson.toJson(messageResponse));
             return;
         }
-
-        // validate path parameter
         String[] urlParts = urlPath.split("/");
         if (!isUrlValid(urlParts)) {
-            responseHandler(response, HttpServletResponse.SC_NOT_FOUND, "Required path parameter is bad.");
+            MessageResponse messageResponse = MessageResponse.builder()
+                    .message("The given input is invalid.")
+                    .build();
+            responseHandler(response, HttpServletResponse.SC_BAD_REQUEST, gson.toJson(messageResponse));
+            return;
         }
 
         final String userId = urlParts[1];
 
-        // validate string payload parsing
-        final String payload = ServletHelper.parsePayloadString(request);
-
 
         // Replace <query_field> and <query_value> with actual values
-        String queryField = "<query_field>";
-        String queryValue = "<query_value>";
+        String queryField = "firstName";
+        String queryValue = "Siyan";
 
         Document query = new Document(queryField, queryValue);
         MongoCursor<Document> cursor = collection.find(query).iterator();
@@ -81,29 +87,26 @@ public class MatchesServlet extends HttpServlet {
         }
 
         String result = resultBuilder.toString();
-        response.getWriter().write(result);
-        response.setContentType("application/json");
-        response.setStatus(HttpServletResponse.SC_OK);
+        System.out.println(result);
 
+        // check if the user exist
+        if (result.isEmpty()) {
+            MessageResponse messageResponse = MessageResponse.builder()
+                    .message("The user doesn't exist.")
+                    .build();
+            responseHandler(response, HttpServletResponse.SC_NOT_FOUND, gson.toJson(messageResponse));
+            return;
+        }
+
+        GetMatchesResponse getMatchesResponse = GetMatchesResponse.builder()
+                .matchList(new LinkedList<>())
+                .build();
+        responseHandler(response, HttpServletResponse.SC_OK, gson.toJson(getMatchesResponse));
     }
-
-//    @Override
-//    public void destroy() {
-//        super.destroy();
-//        cursor.close();
-//        client.close();
-//    }
 
     private boolean isUrlValid(String[] parts) {
-        final String leftOrRight = parts[1];
-        return leftOrRight.equals("left") || leftOrRight.equals("right");
-    }
-
-    private void responseHandler(final HttpServletResponse response,
-                                 final int statusCode,
-                                 final String outputBody) throws IOException {
-        response.setStatus(statusCode);
-        response.getOutputStream().print(outputBody);
-        response.getOutputStream().flush();
+        // get request url: localhost:9988/dev-server/matches/123
+        // parts: [, 123]
+        return parts.length == 2;
     }
 }

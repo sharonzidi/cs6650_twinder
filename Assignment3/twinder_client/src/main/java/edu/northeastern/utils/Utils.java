@@ -17,16 +17,22 @@ public class Utils {
     }
 
     public static SwipeDetails generateSwipeDetails() {
-        final int swiper = random.nextInt(5000) + 1;
-        final int swipee = random.nextInt(1000000) + 1;
         final String comment = generateRandomString(256);
-
         final SwipeDetails swipeDetails = new SwipeDetails();
-        swipeDetails.setSwiper(String.valueOf(swiper));
-        swipeDetails.setSwipee(String.valueOf(swipee));
+
+        swipeDetails.setSwiper(generateRandomSwiperUserId());
+        swipeDetails.setSwipee(generateRandomSwipeeUserId());
         swipeDetails.setComment(comment);
 
         return swipeDetails;
+    }
+
+    public static String generateRandomSwiperUserId() {
+        return String.valueOf(random.nextInt(5000) + 1);
+    }
+
+    public static String generateRandomSwipeeUserId() {
+        return String.valueOf(random.nextInt(1000000) + 1);
     }
 
     private static String generateRandomString(final int length) {

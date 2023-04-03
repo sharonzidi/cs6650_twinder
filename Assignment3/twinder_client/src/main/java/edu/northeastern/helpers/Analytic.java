@@ -1,4 +1,4 @@
-package edu.northeastern;
+package edu.northeastern.helpers;
 
 import edu.northeastern.models.TimeEntry;
 
@@ -37,6 +37,9 @@ public class Analytic {
     }
 
     private void helper() {
+        if (timeEntries.isEmpty()) {
+            return;
+        }
         final long initialTime = timeEntries.stream()
                 .min((a, b) -> Math.toIntExact(a.getStartTime() - b.getStartTime()))
                 .map(TimeEntry::getStartTime).orElse(0L);
@@ -93,7 +96,6 @@ public class Analytic {
         System.out.println("p99: " + p99Latency);
         System.out.println("min: " + minLatency);
         System.out.println("max: " + maxLatency);
-        System.out.println();
     }
 
     // total request # / diff -> (res/ms)*1000 -> throughput / s

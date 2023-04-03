@@ -28,4 +28,16 @@ public class SwipeData {
             likedSwipeeIds.add(message.getSwipee());
         }
     }
+
+    public int getNumLikes() {
+        return numLikes;
+    }
+
+    public int getNumDislikes() {
+        return numDislikes;
+    }
+
+    public List<String> getLikedSwipeeIds() {
+        return likedSwipeeIds;
+    }
 }

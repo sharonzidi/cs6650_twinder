@@ -1,12 +1,7 @@
 package edu.northeastern;
 
 import com.google.gson.Gson;
-import com.rabbitmq.client.AMQP;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.*;
 import edu.northeastern.models.SwipeData;
 import edu.northeastern.models.SwipeDetailsMessage;
 import lombok.Data;
@@ -17,20 +12,24 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Data
-public class MessageConsumer {
+public class MessageConsumerLikeAndDislike {
 
     private final Connection connection;
     private final String queueName;
 
     private final Gson gson;
     private final Map<String, SwipeData> swipeDataMap;
+    private final Map<String, Integer> likeMap;
+    private final Map<String, Integer> dislikeMap;
 
-    MessageConsumer(final Connection connection, final String queueName) {
+    MessageConsumerLikeAndDislike(final Connection connection, final String queueName) {
         this.queueName = queueName;
         this.connection = connection;
 
         gson = new Gson();
         swipeDataMap = new ConcurrentHashMap<>();
+        likeMap = new ConcurrentHashMap<>();
+        dislikeMap = new ConcurrentHashMap<>();
     }
 
     @SneakyThrows
@@ -51,17 +50,21 @@ public class MessageConsumer {
                 final SwipeData swipeData = swipeDataMap.getOrDefault(userId, new SwipeData(userId));
                 swipeData.handleMessage(message);
                 swipeDataMap.put(userId, swipeData);
+                likeMap.put(userId, swipeData.getNumLikes());
+                dislikeMap.put(userId, swipeData.getNumDislikes());
 
-                countHelper();
+                System.out.println(likeMap);
+                System.out.println(dislikeMap);
+                //countHelper();
             }
         };
 
         channel.basicConsume(queueName, true, consumer);
     }
 
-    private void countHelper() {
-        SwipeData data = swipeDataMap.values().stream().sorted((SwipeData a, SwipeData b) -> b.getNumLikes() - a.getNumLikes()).findFirst().get();
-
-        System.out.println(data);
-    }
+//    private void countHelper() {
+//        SwipeData data = swipeDataMap.values().stream().sorted((SwipeData a, SwipeData b) -> b.getNumLikes() - a.getNumLikes()).findFirst().get();
+//
+//        System.out.println(data);
+//    }
 }

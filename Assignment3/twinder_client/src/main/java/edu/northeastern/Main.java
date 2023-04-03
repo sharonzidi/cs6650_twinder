@@ -1,12 +1,20 @@
 package edu.northeastern;
 
+import edu.northeastern.consumers.GetAllConsumer;
+import edu.northeastern.consumers.PostSwipeConsumer;
+import edu.northeastern.helpers.Analytic;
+import edu.northeastern.models.Message;
+import edu.northeastern.models.SharedStatus;
 import edu.northeastern.models.TimeEntry;
-import io.swagger.client.ApiClient;
+import edu.northeastern.producers.GetAllProducer;
+import edu.northeastern.producers.PostSwipeProducer;
+import lombok.SneakyThrows;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -15,48 +23,70 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static edu.northeastern.utils.Constants.NUM_OF_GET_CONSUMERS;
+import static edu.northeastern.utils.Constants.NUM_OF_GET_TASKS_PER_SECOND;
+import static edu.northeastern.utils.Constants.NUM_OF_POST_SWIPE_CONSUMERS;
+import static edu.northeastern.utils.Constants.NUM_OF_POST_SWIPE_TASKS;
+
 public class Main {
 
-    private static final String BASE_PATH = "http://first-alb-2003691837.us-west-2.elb.amazonaws.com/web-server";
+    public static void main(String[] args) {
+        final SharedStatus sharedStatus = new SharedStatus();
 
-    private static final int NUM_OF_TASKS = 50000;
+        final int totalNumOfThreads = NUM_OF_POST_SWIPE_CONSUMERS + 1 + NUM_OF_GET_CONSUMERS + 1;
+        final ExecutorService executorService = Executors.newFixedThreadPool(totalNumOfThreads);
+        final List<Future<?>> futures = new LinkedList<>();
 
-    private static final int NUM_OF_CONSUMER_THREADS = 150;
-
-    public static void main(String[] args) throws IOException {
-        final ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(BASE_PATH);
-
-        final BlockingQueue<Message> blockingQueue = new LinkedBlockingQueue<>();
-        final ConcurrentLinkedQueue<TimeEntry> resultQueue = new ConcurrentLinkedQueue<>();
-
-        final Producer producer = new Producer(apiClient, blockingQueue, NUM_OF_TASKS, NUM_OF_CONSUMER_THREADS);
-        final Thread producerThread = new Thread(producer);
-
-        final ExecutorService executorService = Executors.newFixedThreadPool(NUM_OF_CONSUMER_THREADS);
-        final List<Future<?>> futures = new ArrayList<>();
-
-        // start threads
-        producerThread.start();
-        for (int i = 0; i < NUM_OF_CONSUMER_THREADS; i++) {
-            futures.add(executorService.submit(new Consumer("consumer #" + (i + 1), blockingQueue, resultQueue)));
+        // post swipe
+        final BlockingQueue<Message> postSwipeBlockingQueue = new LinkedBlockingQueue<>();
+        final ConcurrentLinkedQueue<TimeEntry> postSwipeResultQueue = new ConcurrentLinkedQueue<>();
+        // add post swipe producers
+        final PostSwipeProducer postSwipeProducer = new PostSwipeProducer(NUM_OF_POST_SWIPE_TASKS, NUM_OF_POST_SWIPE_CONSUMERS, postSwipeBlockingQueue, sharedStatus);
+        futures.add(executorService.submit(postSwipeProducer));
+        // add post swipe consumers
+        for (int i = 0; i < NUM_OF_POST_SWIPE_CONSUMERS; i++) {
+            final PostSwipeConsumer postSwipeConsumer = new PostSwipeConsumer("PostSwipeConsumer #" + i, postSwipeBlockingQueue, postSwipeResultQueue, sharedStatus);
+            futures.add(executorService.submit(postSwipeConsumer));
         }
 
+        // get stats
+        final BlockingQueue<Message> getBlockingQueue = new LinkedBlockingQueue<>();
+        final ConcurrentLinkedQueue<TimeEntry> getResultQueue = new ConcurrentLinkedQueue<>();
+        // add get stats producer
+        final GetAllProducer getAllProducer = new GetAllProducer(NUM_OF_GET_TASKS_PER_SECOND, NUM_OF_GET_CONSUMERS, getBlockingQueue, sharedStatus);
+        futures.add(executorService.submit(getAllProducer));
+        // add get stats consumer
+        final GetAllConsumer getAllConsumer = new GetAllConsumer("GetAllConsumer #0", getBlockingQueue, getResultQueue, sharedStatus);
+        futures.add(executorService.submit(getAllConsumer));
+
+        // check when all threads are done processing in executor service
         while (true) {
             final int count = (int) futures.stream().filter(Future::isDone).count();
-            if (count == NUM_OF_CONSUMER_THREADS) {
+            if (count == totalNumOfThreads) {
+                System.out.println("Share status:" + sharedStatus);
                 executorService.shutdown();
                 break;
             }
         }
 
+        processAnalytics(new ArrayList<>(postSwipeResultQueue), NUM_OF_POST_SWIPE_CONSUMERS, "PostSwipe");
+        processAnalytics(new ArrayList<>(getResultQueue), NUM_OF_GET_CONSUMERS, "Get");
+    }
+
+    @SneakyThrows
+    public static void processAnalytics(List<TimeEntry> timeEntries, int numOfConsumers, String prefix) {
         // calculation
-        final List<TimeEntry> timeEntries = new ArrayList<>(resultQueue);
-        final Analytic analytic = new Analytic(NUM_OF_CONSUMER_THREADS, NUM_OF_TASKS, NUM_OF_TASKS, 0, timeEntries);
+        final Analytic analytic = new Analytic(numOfConsumers, timeEntries.size(), timeEntries.size(), 0, timeEntries);
         analytic.print();
 
         // write to csv file
-        String fileName = NUM_OF_CONSUMER_THREADS + "_threads_" + "results.csv";
+        String folderPath = "analytics/";
+        File directory = new File(folderPath);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        String fileName = folderPath + prefix + "_" + numOfConsumers + "_threads_" + "results.csv";
         System.out.println("Generating csv file for " + fileName);
         BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
         writer.write("start_time,end_time,latency,request_type,response_code\n");
@@ -71,4 +101,5 @@ public class Main {
         }
         writer.close();
     }
+
 }

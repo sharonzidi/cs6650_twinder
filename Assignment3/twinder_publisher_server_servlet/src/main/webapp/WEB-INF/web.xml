@@ -16,7 +16,6 @@
         <servlet-name>StatsServlet</servlet-name>
         <servlet-class>edu.northeastern.StatsServlet</servlet-class>
     </servlet>
-
     <servlet>
         <servlet-name>HealthServlet</servlet-name>
         <servlet-class>edu.northeastern.HealthServlet</servlet-class>

@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static edu.northeastern.utils.ServletHelper.responseHandler;
+
 @WebServlet(name = "HealthServlet", value = "/HealthServlet")
 @Log4j2
 public class HealthServlet extends HttpServlet {
@@ -17,13 +19,5 @@ public class HealthServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("text/plain");
         responseHandler(response, HttpServletResponse.SC_OK, "It works!");
-    }
-
-    private void responseHandler(final HttpServletResponse response,
-                                 final int statusCode,
-                                 final String outputBody) throws IOException {
-        response.setStatus(statusCode);
-        response.getOutputStream().print(outputBody);
-        response.getOutputStream().flush();
     }
 }

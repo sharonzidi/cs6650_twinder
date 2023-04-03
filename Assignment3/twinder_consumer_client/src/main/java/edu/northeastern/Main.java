@@ -22,11 +22,14 @@ public class Main {
         // Create connection pool and acquire connection
         final RMQConnectionPool pool = new RMQConnectionPool(connectionFactory, 2);
         final Connection connection = pool.getConnection();
-        final MessageConsumer consumer = new MessageConsumer(connection, QUEUE_NAME);
+        final MessageConsumerLikeAndDislike consumerLikedAndDislike = new MessageConsumerLikeAndDislike(connection, QUEUE_NAME);
+        final MessageConsumerLikeAndDislike consumerLikedSwipee = new MessageConsumerLikeAndDislike(connection, QUEUE_NAME);
 
         try {
             // handling RMQ messages
-            consumer.handle();
+            consumerLikedAndDislike.handle();
+            consumerLikedSwipee.handle();
+
         } finally {
             pool.releaseConnection(connection);
         }
