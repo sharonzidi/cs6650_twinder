@@ -65,6 +65,7 @@ public class GetAllConsumer extends BaseConsumer {
 
                     } else {
                         exception.printStackTrace();
+                        resultQueue.add(new TimeEntry(startTime, endTime));
                     }
                 }
             }
@@ -91,6 +92,7 @@ public class GetAllConsumer extends BaseConsumer {
 
                     } else {
                         exception.printStackTrace();
+                        resultQueue.add(new TimeEntry(startTime, endTime));
                     }
                 }
             }

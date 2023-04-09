@@ -1,18 +1,17 @@
 package edu.northeastern.models;
 
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Setter
-@Getter
-@SuperBuilder
+@Builder
+@Data
 @AllArgsConstructor
-@ToString
-@EqualsAndHashCode(callSuper = true)
-public class SwipeDetailsMessage extends SwipeDetailsRequest {
-    private final String leftOrRight;
+@NoArgsConstructor
+public class SwipeDetailsMessage {
+    private String swiper;
+    private String swipee;
+    private String comment;
+    private String leftOrRight;
 }

@@ -1,14 +1,15 @@
 package edu.northeastern;
 
 import com.google.gson.Gson;
+import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import edu.northeastern.models.StatusResponse;
 import edu.northeastern.models.SwipeDetailsMessage;
 import edu.northeastern.models.SwipeDetailsRequest;
+import edu.northeastern.utils.RMQConnection;
 import edu.northeastern.utils.ServletHelper;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -19,17 +20,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
+import static edu.northeastern.utils.Constants.RMQ_EXCHANGE_NAME;
+import static edu.northeastern.utils.Constants.RMQ_QUEUE_MATCHES;
+import static edu.northeastern.utils.Constants.RMQ_QUEUE_STATS;
+import static edu.northeastern.utils.ServletHelper.responseHandler;
+
 @WebServlet(name = "SwipeServlet", value = "/SwipeServlet")
-@Log4j2
+@Slf4j
 public class SwipeServlet extends HttpServlet {
-    public static final String QUEUE_NAME = "twinder_swipe_queue";
 
     private final Gson gson = new Gson();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-//        log.info("Handling SwipeServlet post request...");
-        response.setContentType("application/json");
+        log.info("Handling SwipeServlet post request...");
 
         // validate path parameter existence
         final String urlPath = request.getPathInfo();
@@ -80,7 +84,7 @@ public class SwipeServlet extends HttpServlet {
         // add to RMQ producer
         try {
             final String swipeMessage = gson.toJson(swipeDetailsMessage);
-            System.out.println("Sending message: " + swipeMessage);
+            log.info("Sending message to RMQ: " + swipeMessage);
             sendToRabbitMQ(swipeMessage);
         } catch (Exception e) {
             e.printStackTrace();
@@ -90,35 +94,24 @@ public class SwipeServlet extends HttpServlet {
     }
 
     private void sendToRabbitMQ(String jsonPayload) throws IOException, TimeoutException {
-        // Set up RabbitMQ connection and channel
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost"); // Replace with the hostname or IP address of your RabbitMQ server
-        factory.setUsername("admin-user"); // Replace with your RabbitMQ username
-        factory.setPassword("aKNlI4BwD#w74S#R9&KE"); // Replace with your RabbitMQ password
-        Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
+        final Connection connection = RMQConnection.getConnection();
+        final Channel channel = connection.createChannel();
 
-        // Declare the queue if it doesn't already exist
-        channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+        channel.exchangeDeclare(RMQ_EXCHANGE_NAME, BuiltinExchangeType.FANOUT, true);
 
-        // Send the message to the queue
-        channel.basicPublish("", QUEUE_NAME, null, jsonPayload.getBytes(StandardCharsets.UTF_8));
+        channel.queueDeclare(RMQ_QUEUE_STATS, false, false, false, null);
+        channel.queueBind(RMQ_QUEUE_STATS, RMQ_EXCHANGE_NAME, "");
 
-        // Clean up resources
+        channel.queueDeclare(RMQ_QUEUE_MATCHES, false, false, false, null);
+        channel.queueBind(RMQ_QUEUE_MATCHES, RMQ_EXCHANGE_NAME, "");
+
+        channel.basicPublish(RMQ_EXCHANGE_NAME, "", null, jsonPayload.getBytes(StandardCharsets.UTF_8));
+
         channel.close();
-        connection.close();
     }
 
     private boolean isUrlValid(String[] parts) {
         final String leftOrRight = parts[1];
         return leftOrRight.equals("left") || leftOrRight.equals("right");
-    }
-
-    private void responseHandler(final HttpServletResponse response,
-                                 final int statusCode,
-                                 final String outputBody) throws IOException {
-        response.setStatus(statusCode);
-        response.getOutputStream().print(outputBody);
-        response.getOutputStream().flush();
     }
 }

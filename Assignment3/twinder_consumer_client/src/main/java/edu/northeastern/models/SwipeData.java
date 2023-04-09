@@ -20,24 +20,12 @@ public class SwipeData {
         this.likedSwipeeIds = new ArrayList<>();
     }
 
-    public synchronized void handleMessage(final SwipeDetailsMessage message) {
+    public void handleMessage(final SwipeDetailsMessage message) {
         if ("left".equals(message.getLeftOrRight())) {
             numDislikes++;
         } else {
             numLikes++;
             likedSwipeeIds.add(message.getSwipee());
         }
-    }
-
-    public int getNumLikes() {
-        return numLikes;
-    }
-
-    public int getNumDislikes() {
-        return numDislikes;
-    }
-
-    public List<String> getLikedSwipeeIds() {
-        return likedSwipeeIds;
     }
 }

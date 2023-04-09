@@ -8,7 +8,7 @@ public final class Constants {
 
     public static final String API_BASE_PATH = "http://localhost:9988/dev-server";
 
-    public static final int NUM_OF_POST_SWIPE_TASKS = 20;
+    public static final int NUM_OF_POST_SWIPE_TASKS = 500;
 
     public static final int NUM_OF_POST_SWIPE_CONSUMERS = 10;
 

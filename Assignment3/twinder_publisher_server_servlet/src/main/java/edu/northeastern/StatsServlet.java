@@ -1,49 +1,40 @@
 package edu.northeastern;
 
 import com.google.gson.Gson;
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
-import com.mongodb.ServerApi;
-import com.mongodb.ServerApiVersion;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import edu.northeastern.models.GetStatsResponse;
 import edu.northeastern.models.MessageResponse;
-import lombok.extern.log4j.Log4j2;
-import org.bson.Document;
+import edu.northeastern.models.SwipeDetailsMessage;
+import edu.northeastern.utils.MongoDBConnection;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.conversions.Bson;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
+import static edu.northeastern.utils.Constants.MONGO_DB_COLLECTION;
+import static edu.northeastern.utils.Constants.MONGO_DB_NAME;
 import static edu.northeastern.utils.ServletHelper.responseHandler;
 
 @WebServlet(name = "StatsServlet", value = "/StatsServlet")
-@Log4j2
+@Slf4j
 public class StatsServlet extends HttpServlet {
 
     private final Gson gson = new Gson();
 
+    private final MongoClient mongoClient = MongoDBConnection.getInstance();
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        System.out.println(request);
-        ConnectionString connectionString = new ConnectionString("mongodb+srv://dbuser:EwuPYvnsU2mtLsbt@cluster0.lhvylio.mongodb.net/?retryWrites=true&w=majority");
-        MongoClientSettings settings = MongoClientSettings.builder()
-                .applyConnectionString(connectionString)
-                .serverApi(ServerApi.builder()
-                        .version(ServerApiVersion.V1)
-                        .build())
-                .build();
-        MongoClient mongoClient = MongoClients.create(settings);
-        MongoDatabase database = mongoClient.getDatabase("cs6650-distributed-sys");
-        MongoCollection<Document> collection = database.getCollection("twinder-data"); //the collection of documents to query
-
-        response.setContentType("text/plain");
+        log.info("Executing StatsServlet doGet");
 
         // check we have a URL!
         final String urlPath = request.getPathInfo();
@@ -55,7 +46,7 @@ public class StatsServlet extends HttpServlet {
             responseHandler(response, HttpServletResponse.SC_BAD_REQUEST, gson.toJson(messageResponse));
             return;
         }
-        String[] urlParts = urlPath.split("/");
+        final String[] urlParts = urlPath.split("/");
         if (!isUrlValid(urlParts)) {
             MessageResponse messageResponse = MessageResponse.builder()
                     .message("The given input is invalid.")
@@ -64,37 +55,29 @@ public class StatsServlet extends HttpServlet {
             return;
         }
 
-        // Replace <query_field> and <query_value> with actual values
-        String userId = urlParts[1];
-        String queryField = "firstName";
-        String queryValue = userId;
+        final String swiperId = urlParts[1];
 
-        Document query = new Document(queryField, queryValue);
-        MongoCursor<Document> cursor = collection.find(query).iterator();
+        final MongoDatabase database = mongoClient.getDatabase(MONGO_DB_NAME);
+        final MongoCollection<SwipeDetailsMessage> collection = database.getCollection(MONGO_DB_COLLECTION, SwipeDetailsMessage.class);
 
-        // Process the result set...
-        StringBuilder resultBuilder = new StringBuilder();
-        while (cursor.hasNext()) {
-            Document document = cursor.next();
-            resultBuilder.append(document.toJson());
-            resultBuilder.append("\n");
-        }
+        final Bson filter = Filters.eq("swiper", swiperId);
+        final List<SwipeDetailsMessage> queriedMessages = new LinkedList<>();
+        collection.find(filter).forEach(queriedMessages::add);
 
-        String result = resultBuilder.toString();
-        System.out.println(result);
+        log.info("Queried {} collection with swiperId: {} and returned {} results.", MONGO_DB_COLLECTION, swiperId, queriedMessages.size());
 
         // check if the user exist
-        if (result.isEmpty()) {
-            MessageResponse messageResponse = MessageResponse.builder()
+        if (queriedMessages.isEmpty()) {
+            final MessageResponse messageResponse = MessageResponse.builder()
                     .message("The user doesn't exist.")
                     .build();
             responseHandler(response, HttpServletResponse.SC_NOT_FOUND, gson.toJson(messageResponse));
             return;
         }
 
-        GetStatsResponse getStatsResponse = GetStatsResponse.builder()
-                .numLlikes(72L)
-                .numDislikes(489L)
+        final GetStatsResponse getStatsResponse = GetStatsResponse.builder()
+                .numLlikes(queriedMessages.stream().map(SwipeDetailsMessage::getLeftOrRight).filter(e -> e.equals("right")).count())
+                .numDislikes(queriedMessages.stream().map(SwipeDetailsMessage::getLeftOrRight).filter(e -> e.equals("left")).count())
                 .build();
         responseHandler(response, HttpServletResponse.SC_OK, gson.toJson(getStatsResponse));
     }
