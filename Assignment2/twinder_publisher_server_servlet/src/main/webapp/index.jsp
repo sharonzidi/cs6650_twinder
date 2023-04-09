@@ -9,5 +9,7 @@
   </head>
   <body>
   $END$
+
+  Hello world!
   </body>
 </html>

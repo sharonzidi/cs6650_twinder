@@ -5,7 +5,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Log4j2
@@ -22,5 +23,14 @@ public class ServletHelper {
             log.warn("Unable to handle payload parsing: " + exception.getMessage());
             return null;
         }
+    }
+
+    public static void responseHandler(final HttpServletResponse response,
+                                       final int statusCode,
+                                       final String outputBody) throws IOException {
+        response.setContentType("application/json");
+        response.setStatus(statusCode);
+        response.getOutputStream().print(outputBody);
+        response.getOutputStream().flush();
     }
 }
